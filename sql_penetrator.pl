@@ -4,14 +4,17 @@ use DBI;
 use Benchmark qw(:all);
 use Threads;
 use Threads::shared;
+use POSIX qw(strftime);
 #Anzahl der Durchläufe der Schleifen
-my $Loops=100000;
+my $Loops=10000;
 #Benötigt einen DSN-Eintrag
 my $DSN = "MSSQL";
 #Angabe der CPU Cores
 my $cores=8;
 #Initialisierung des Logfiles
 &bench_log();
+my $timestamp= localtime(time);
+&bench_log($timestamp . ";");
 #Aufbau der Verbindung zur Datenbank
 my $dbh = DBI->connect("dbi:ODBC:$DSN")
 	or die ("Can't connect to database \n");
@@ -129,8 +132,7 @@ sub bench_log {
 		#CSV Header werden geschrieben
 		else {
 			open (LOG, "> $Logfile") or die$!;
-				print LOG "Write;";
-				print LOG "Queries;";
+				print LOG "Time;Write;Queries;";
 				$i=0;
 				while($i< $cores){
 					print  LOG "READ;";
