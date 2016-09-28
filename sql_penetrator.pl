@@ -75,7 +75,7 @@ my $dbh = DBI->connect("dbi:ODBC:$DSN")
 	substr($read_log_message, index($bench_message, ' ', 1)) = '';
 	&bench_log($read_log_message . ";");
 	&bench_log($Loops . ";");
-	my $Qps=$Loops/$read_log_message;
+	my $Qps=sprintf("%.2f",$Loops/$read_log_message);
 	&bench_log($Qps . ";");
 	
 	#Trennen der Verbindung zur Datenbank	
@@ -151,14 +151,14 @@ sub bench_log {
 		#CSV Header werden geschrieben
 		else {
 			open (LOG, "> $Logfile") or die$!;
-				print LOG "Time;Write;Queries;Qp/s write";
+				print LOG "Time;Write;Queries;Qp/s write;";
 				$i=0;
 				while($i< $cores){
 					print  LOG "READ;";
 					$i++;
 				}
 				print LOG "ALL READ;";
-				print LOG "Qp/s read";
+				print LOG "Qp/s read;";
 				#wird nicht mehr gebraucht wenn am Anfang das Logfile initialisiert wird.
 				#print LOG $_[0] . "\n";
 				print LOG "\n";
@@ -194,6 +194,7 @@ while($i < $cores){
 	substr($all_log_message, index($bench_message, ' ', 1)) = '';
 	&bench_log($all_log_message . ";");
 	
-	$Qps=($Loops*$cores)/$all_log_message;
-	&bench_log($Qps . ";");
+	$Qps=$Loops*$cores)/$all_log_message;
+	my $Qps_round=sprintf("%.2f",$Qps);
+	&bench_log($Qps_round . ";");
 &bench_log("\n");

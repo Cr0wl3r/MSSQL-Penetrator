@@ -1,2 +1,2 @@
-100 wallclock secs (10.97 usr +  1.94 sys = 12.90 CPU)
-845 wallclock secs ( 9.59 usr +  1.68 sys = 11.28 CPU)
+Time;Write;Queries;Qp/s writeREAD;READ;READ;READ;READ;READ;READ;READ;ALL READ;Qp/s read
+Wed Sep 28 16:48:39 2016;10;10000;1000;13;13;13;18;18;20;20;20;4000;
