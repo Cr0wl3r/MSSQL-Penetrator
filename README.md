@@ -10,10 +10,8 @@ Software is tested with MSSQL Server 2008R2
    
 == Usage
   Usage: sql_penetrator.pl [cores] [loops] [dsn]
-  
-	Options: [cores]    Number of course on the system the benchmark will run. Use carefully. Per core the applications will create one query benchmark.
-	         [loops]    Number of entries in the database. Try how much yoursystem can handle.
-	         [dsn]      Name of the DSN entry which will be used to connect to the MSSQL database.
-           
-	Example:  sql_penetrator.pl 8 1000000 MSSQL
+  Options: [cores]    Number of course on the system the benchmark will run. Use carefully. Per core the applications will create one query benchmark.
+           [loops]    Number of entries in the database. Try how much yoursystem can handle.
+	   [dsn]      Name of the DSN entry which will be used to connect to the MSSQL database.
+  Example:  sql_penetrator.pl 8 1000000 MSSQL
 
