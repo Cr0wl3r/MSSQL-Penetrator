@@ -3,10 +3,15 @@ use warnings;
 use DBI;
 use Benchmark qw(:all);
 use Threads;
+use Threads::shared;
 #Anzahl der Durchläufe der Schleifen
-my $Loops=10000;
+my $Loops=100000;
 #Benötigt einen DSN-Eintrag
 my $DSN = "MSSQL";
+#Angabe der CPU Cores
+my $cores=8;
+#Initialisierung des Logfiles
+&bench_log();
 #Aufbau der Verbindung zur Datenbank
 my $dbh = DBI->connect("dbi:ODBC:$DSN")
 	or die ("Can't connect to database \n");
@@ -45,8 +50,11 @@ my $dbh = DBI->connect("dbi:ODBC:$DSN")
 	my $bench_message = timestr($timeline1);
 	print "$bench_message\n";
 	#Loggen
-	my $read_log_message = "WRITE: $bench_message";
-	&bench_log($read_log_message);
+	my $read_log_message = $bench_message;
+	# ersetze Alles nach dem ersten Leerzeichen durch Leerstring
+	substr($read_log_message, index($bench_message, ' ', 1)) = '';
+	&bench_log($read_log_message . ";");
+	&bench_log($Loops . ";");
 	
 	#Trennen der Verbindung zur Datenbank	
 	$dbh->disconnect();
@@ -56,16 +64,17 @@ my $dbh = DBI->connect("dbi:ODBC:$DSN")
 	
 	#Benchmark Read starten
 	my $i=0;
-	my $cores=8;
+	#Benchmark Zeit aller Queries
+	my $timeline3=new Benchmark;
 	print "CPU: $cores \n";
 	print "Starte $cores Query Benchmarks mit jeweils $Loops Queries. \n";
 	my @threads;
+	my $thread_ends :shared;
+	$thread_ends=0;
 	while ($i < $cores){
 		@threads[$i]=threads->new(\&bench_read);
 		$i ++;
 	}
-
-	
 	
 	#---------------------------------------------------------------------
 	#Benchmark der Lesegeschwindigkeit. 
@@ -94,10 +103,13 @@ my $dbh = DBI->connect("dbi:ODBC:$DSN")
 		print "$count Queries in:";
 		print "$bench_message\n";
 		#Loggen
-		my $write_log_message="READ: $bench_message";
-		&bench_log($write_log_message);
+		my $write_log_message="$bench_message";
+		# ersetze Alles nach dem ersten Leerzeichen durch Leerstring
+		substr($write_log_message, index($bench_message, ' ', 1)) = '';
+		&bench_log($write_log_message . ";");
 		threads->exit();
 		$dbh->disconnect();
+		$thread_ends++;
 	}
 	
 	#-----------------------------------------------------------------------
@@ -108,13 +120,26 @@ my $dbh = DBI->connect("dbi:ODBC:$DSN")
 sub bench_log {
 	my $Logfile="sql_penetrator.log";
 	if (-e $Logfile){ 
+		#Eintrag generieren in CSV File
 		open (LOG, ">> $Logfile") or die$!;
-			print LOG $_[0] . "\n";
+			print LOG $_[0];
 		close (LOG);
 		}
+		#Initialisiere Logfile
+		#CSV Header werden geschrieben
 		else {
 			open (LOG, "> $Logfile") or die$!;
-				print LOG $_[0] . "\n";
+				print LOG "Write;";
+				print LOG "Queries;";
+				$i=0;
+				while($i< $cores){
+					print  LOG "READ;";
+					$i++;
+				}
+				print LOG "ALL READ;";
+				#wird nicht mehr gebraucht wenn am Anfang das Logfile initialisiert wird.
+				#print LOG $_[0] . "\n";
+				print LOG "\n";
 			close (LOG);
 		}
 }
@@ -123,3 +148,14 @@ while($i < $cores){
 	@threads[$i]->join();
 	$i ++;
 }
+	$timeline3= timediff (new Benchmark, $timeline3);
+	print "Alle Query Benchmarks beendet!\n";
+	print "$count1*$cores Inserts in:";
+	my $bench_message = timestr($timeline3);
+	print "$bench_message\n";
+	#Loggen
+	my $all_log_message = $bench_message;
+	# ersetze Alles nach dem ersten Leerzeichen durch Leerstring
+	substr($all_log_message, index($bench_message, ' ', 1)) = '';
+	&bench_log($all_log_message . ";");
+&bench_log("\n");
