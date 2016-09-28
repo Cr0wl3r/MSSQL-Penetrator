@@ -6,11 +6,28 @@ use Threads;
 use Threads::shared;
 use POSIX qw(strftime);
 #Anzahl der Durchläufe der Schleifen
-my $Loops=10000;
+
+my ($cores, $Loops, $DSN) = @ARGV;
+
+if (not defined $cores){
+	&help;
+	die "Wrong parameterlist\n";
+	}
+if (not defined $Loops){
+	&help;
+	die "Wrong parameterlist\n";
+	}
+if (not defined $DSN){
+	&help;
+	die "Wrong parameterlist\n";
+	}
+
+
+#my $Loops=10000;
 #Benötigt einen DSN-Eintrag
-my $DSN = "MSSQL";
+#my $DSN = "MSSQL";
 #Angabe der CPU Cores
-my $cores=8;
+#my $cores=8;
 #Initialisierung des Logfiles
 &bench_log();
 my $timestamp= localtime(time);
@@ -145,15 +162,28 @@ sub bench_log {
 			close (LOG);
 		}
 }
+
+sub help {
+	print "\nUsage: sql_penetrator.pl [cores] [loops] [dsn]\n\n";
+	print "Options: [cores]    Number of course on the system the benchmark will run.\n";
+	print "                    Use carefully. Per core the applications will create \n";
+	print "                    one query benchmark.\n";
+	print "         [loops]    Number of entries in the database. Try how much your \n";
+	print "                    system can handle.\n";
+	print "         [dsn]      Name of the DSN entry which will be used to connect to\n";
+	print "                    the MSSQL database.\n\n";
+	print "Example:  sql_penetrator.pl 8 1000000 MSSQL \n\n";
+}
+
 $i=0;
 while($i < $cores){
-	@threads[$i]->join();
+	$threads[$i]->join();
 	$i ++;
 }
 	$timeline3= timediff (new Benchmark, $timeline3);
 	print "Alle Query Benchmarks beendet!\n";
 	print "$count1*$cores Inserts in:";
-	my $bench_message = timestr($timeline3);
+	$bench_message = timestr($timeline3);
 	print "$bench_message\n";
 	#Loggen
 	my $all_log_message = $bench_message;
