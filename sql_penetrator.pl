@@ -2,9 +2,12 @@ use strict;
 use warnings;
 use DBI;
 use Benchmark qw(:all);
+#use Benchmark::hireswallclock;
+use Benchmark ':hireswallclock';
 use Threads;
 use Threads::shared;
 use POSIX qw(strftime);
+use Time::HiRes;
 #Anzahl der Durchläufe der Schleifen
 
 my ($cores, $Loops, $DSN) = @ARGV;
@@ -40,7 +43,7 @@ my $dbh = DBI->connect("dbi:ODBC:$DSN")
 	#Existiert die Tabelle bereits wird sie gelöscht
 	my $sql_tabledrop = "IF (OBJECT_ID('T1') is not null) DROP TABLE T1";
 	#Anlegen der Testtabelle
-	print "Anlegen der Testtabelle!";
+	print "Anlegen der Testtabelle!\n";
 	my $sql_tablecreate = "CREATE TABLE T1 (id int NOT NULL, daten nchar (20) NULL)";
 	my $sth=$dbh->prepare($sql_tabledrop);
 	$sth->execute();
@@ -52,7 +55,7 @@ my $dbh = DBI->connect("dbi:ODBC:$DSN")
 	#----------------------------------------------------------------------
 	#Benchmark der Schreibgeschwindigkeit auf die Tabelle
 	#Benchmark Zeit starten
-	print "Starte Insert Benchmark!";
+	print "Starte Insert Benchmark!\n";
 	my $timeline1= new Benchmark;
 	my $count1 = 0;
 	
@@ -65,7 +68,7 @@ my $dbh = DBI->connect("dbi:ODBC:$DSN")
 	}
 	#Benchmark Zeit stoppen
 	$timeline1= timediff (new Benchmark, $timeline1);
-	print "Insert Benchmark beendet!\n";
+	#print "Insert Benchmark beendet!\n";
 	print "$count1 Inserts in:";
 	my $bench_message = timestr($timeline1);
 	print "$bench_message\n";
@@ -89,7 +92,7 @@ my $dbh = DBI->connect("dbi:ODBC:$DSN")
 	#Benchmark Zeit aller Queries
 	my $timeline3=new Benchmark;
 	print "CPU: $cores \n";
-	print "Starte $cores Query Benchmarks mit jeweils $Loops Queries. \n";
+	print "Starte $cores Query Benchmarks. \n";
 	my @threads;
 	my $thread_ends :shared;
 	$thread_ends=0;
@@ -109,7 +112,8 @@ my $dbh = DBI->connect("dbi:ODBC:$DSN")
 			my $dbh = DBI->connect("dbi:ODBC:$DSN")
 	or die ("Can't connect to database \n");
 		my $count = 0;
-		while ($count < $Loops){
+		my $core_loops=$Loops/$cores;
+		while ($count < $core_loops){
 			#Lesen jedes Wertes der Tabelle ohne Index
 			my $sql_statement2 = "SELECT * FROM T1 WHERE ID=$count";
 			$sth=$dbh->prepare($sql_statement2);
@@ -121,7 +125,7 @@ my $dbh = DBI->connect("dbi:ODBC:$DSN")
 		#Benchmark Zeit stoppen
 		$timeline2= timediff (new Benchmark, $timeline2);
 		my $bench_message = timestr($timeline2);
-		print "Query Benchmark beendet!\n";
+		#print "Query Benchmark beendet!\n";
 		print "$count Queries in:";
 		print "$bench_message\n";
 		#Loggen
@@ -184,8 +188,8 @@ while($i < $cores){
 	$i ++;
 }
 	$timeline3= timediff (new Benchmark, $timeline3);
-	print "Alle Query Benchmarks beendet!\n";
-	print "$count1*$cores Inserts in:";
+	#print "Alle Query Benchmarks beendet!\n";
+	print "$Loops Inserts in:";
 	$bench_message = timestr($timeline3);
 	print "$bench_message\n";
 	#Loggen
@@ -194,7 +198,7 @@ while($i < $cores){
 	substr($all_log_message, index($bench_message, ' ', 1)) = '';
 	&bench_log($all_log_message . ";");
 	
-	$Qps=$Loops*$cores)/$all_log_message;
+	$Qps=($Loops*$cores)/$all_log_message;
 	my $Qps_round=sprintf("%.2f",$Qps);
 	&bench_log($Qps_round . ";");
 &bench_log("\n");
